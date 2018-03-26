@@ -4,21 +4,21 @@
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<meta http-equiv="x-ua-compatible" content="ie=edge">
-	<link rel="icon" href="https://static.jianshukeji.com/hcode/images/favicon.ico">
+	<link rel="icon" href="/resource/favicon.ico">
 	
 	<style>#container {
-		min-width: 380;
-		max-width: 800px;
+		min-width: 280px;
+		max-width: 600px;
 		margin: 0 auto;
 	}
 	</style>	
-	<script src="https://img.hcharts.cn/highcharts/highcharts.js"></script>
-	<script src="https://img.hcharts.cn/highcharts/modules/exporting.js"></script>
-	<script src="https://img.hcharts.cn/highcharts/modules/boost.js"></script>
-	<script src="https://img.hcharts.cn/highcharts/modules/boost-canvas.js"></script>
-	<script src="https://img.hcharts.cn/highcharts-plugins/highcharts-zh_CN.js"></script>
+	<script src="/resource/highcharts/highcharts.js"></script>
+	<script src="/resource/highcharts/modules/exporting.js"></script>
+	<script src="/resource/highcharts/modules/boost.js"></script>
+	<script src="/resource/highcharts/modules/boost-canvas.js"></script>
+	<script src="/resource/highcharts-plugins/highcharts-zh_CN.js"></script>
 	
-	<script src="https://cdn.hcharts.cn/jquery/jquery-1.8.3.min.js"></script>
+	<script src="/resource/jquery/jquery-1.8.3.min.js"></script>
 	
 </head>
 <title>室内实时位置显示</title>
@@ -32,72 +32,64 @@
 	<div id="container"></div>
 
 	<script>
-		// Prepare the data
-		/*var data = [],
-			n = 10,
-			i;
-		for (i = 0; i < n; i += 1) {
-			data.push([
-				Math.pow(Math.random(), 2) * 100,
-				Math.pow(Math.random(), 2) * 100
-			]);
-		}*/
+
 		
 		if (!Highcharts.Series.prototype.renderCanvas) {
 			throw 'Module not loaded';
 		}
+		var charts=null;
 		
 		function requestData() {
-			var x=Math.floor(Math.random()*100),y=Math.floor(Math.random()*100);
-			var point=new Array();
-			point[0]=x;
-			point[1]=y;
 			
-			alert(point[0]+' '+point[1]);
-			
-			alert(chart);
-			var series = chart.series[0];
-			alert(series.data.length);
-			shift = series.data.length > 1; // 当数据点数量超过 1 个，则指定删除第一个点
-					// 新增点操作
-					//Object options, [Boolean redraw], [Boolean shift], [Mixed animation]
-					//shift为true则删除数据列第一个点
-			alert(series.data.length);
-			chart.series[0].addPoint(point, true, shift);
-			setTimeout(requestData, 1000);
-			/*
 			$.ajax({
-				url: 'sdfsdf/sdf',
+				url: 'demo.cgi',
 			
-				success: function(point) {
-					  
-					var series = chart.series[0],
-						shift = series.data.length > 1; // 当数据点数量超过 1 个，则指定删除第一个点
-					// 新增点操作
-					//Object options, [Boolean redraw], [Boolean shift], [Mixed animation]
-					//shift为true则删除数据列第一个点
-					chart.series[0].addPoint(point, true, shift);
-
+				success: function(pointSrc) {
+                    var pointStr=pointSrc.trim();
+                    if(pointStr!='empty'){
+					    var pointObj=JSON.parse(pointStr);  
+					    //alert(pointObj.point);
+					    charts.series[0].addPoint(pointObj.point, true, true);
+					    //charts.tooltip.refresh(pointObj.point);			
+                        activeLastPointTooltip(charts);
+                    }
 					// 一秒后继续调用本函数
-					setTimeout(requestData, 1000);
+					setTimeout(requestData, 500);
 				},
 				error: function(XMLRequestObject,errorInfo){
 					alert("获取坐标数据失败\r\n"+"原因："+errorInfo);
 				},
 				cache: false
-			});*/
+			});
+			
 		}
 		
-		var chart=null;
+		function activeLastPointTooltip (mychart)
+		{
+			var points = mychart.series[0].points;
+			mychart.tooltip.refresh(points[0]);
+		}
+		
 		$(document).ready(function() {
-			alert("enter create chart");
-			chart = new Highcharts.Chart({
+			
+			charts = new Highcharts.chart({
 				chart: {
 					renderTo: 'container',
 					zoomType: 'xy',
 					height: '100%',
+					plotBorderWidth:2,
+					plotBorderColor:'#000',
 					events: {
-						load: requestData // 图表加载完毕后执行的回调函数
+						load: requestData,
+                        /*function () {
+							var series = this.series[0], chart1 = this;
+							setInterval(function () {
+								var x = Math.random()*10;
+								var y = Math.random()*10;
+								series.addPoint([x, y], true, true);
+								activeLastPointTooltip(chart1);
+							},1000);
+						}*/
 					}
 				},
 				boost: {
@@ -106,11 +98,16 @@
 				},
 				xAxis: {
 					min: 0,
-					max: 100,
+					max: 10,
+					tickLength: 3,
 					gridLineWidth: 1,
+					gridLineColor: '#A0A0A0',
+					gridLineDashStyle: 'Dash',
 					title: {
 						enabled: true,
-						text: '<span style="font-size:large;padding-top:auto;">x坐标(单位：)</span>'
+						text: '<span style="font-size:large;padding-top:auto;color:#000;">x坐标（单位：m）</span>',
+						margin: 10,
+						
 					},
 					labels: {  
 						formatter: function () {  
@@ -126,12 +123,16 @@
 				yAxis: {
 					// Renders faster when we don't have to compute min and max
 					min: 0,
-					max: 100,
-					minPadding: 0,
-					maxPadding: 0,
+					max: 10,
+					//minPadding: 0,
+					//maxPadding: 0,
+					gridLineWidth: 1,
+					gridLineDashStyle: 'Dash',
+					gridLineColor: '#A0A0A0',
 					title: {
 						enabled: true,
-						text: '<span style="font-size:large;">y坐标(单位：)</span>'
+						text: '<span style="font-size:large;color:#000;">y坐标（单位：m）</span>',
+						margin: 10,
 					},
 					labels: {  
 						formatter: function () {  
@@ -145,33 +146,42 @@
 					}      
 				},
 				title: {
-					text: '室内实时位置显示'
+					style: {
+						color: '#000',
+						fontWeight: 'bold',
+						fontSize: '24px'
+					},
+					text: '基于双麦克风的声源定位系统',
+					
 				},
-				subtitle:{
+				/*subtitle:{
+					style: {
+						color: '#000',
+					},
 					text: '根据计算的x-y坐标显示当前位置'
+				},*/
+
+				tooltip: {
+					formatter: function () {
+						return '<b>声源位置</b><br/>x=' + Highcharts.numberFormat(this.x, 2) + ', y=' + Highcharts.numberFormat(this.y, 2); 
+					}
 				},
 				legend: {
 					enabled: false
 				},
 				series: [{
 					type: 'scatter',
-					color: '#36648B',
-					data: [],
-					name: 'x-y坐标'
-					/*marker: {
-						radius: 0.1
-					},
-					tooltip: {
-						followPointer: false,
-						pointFormat: '[{point.x:.1f}, {point.y:.1f}]'
-					}*/
+					color: '#ff0000',
+					name: 'x-y坐标',
+					data: [[0, 0]],
+					marker:{
+						//symbol: 
+						radius: 10,
+					},	
 				}]
 			});
-		
+			
 		});
-		
-		
-		
 		
 </script>
 </body>
